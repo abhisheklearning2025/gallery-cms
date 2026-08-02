@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Gallery</title>
+
+<!--
+  +--------------------------------------------------------------+
+  |  HOW TO MAKE IT YOURS - edit the  GALLERY  config below.      |
+  |  - title   : the wordmark, top-left. Also the browser tab.   |
+  |  - tagline : the small line under it (date, place, etc).     |
+  |  - hint    : the nudge along the bottom edge.                |
+  |  - media : one entry per photo/video. Set:                   |
+  |       type : "image" | "video"                               |
+  |       src  : "media/01.jpg"  (path to your file)             |
+  |       size : "s" | "m" | "l" | "xl"  (optional)              |
+  |       tag  : "anything"      (optional label on hover)       |
+  |  Drop your files in a /media folder beside this .html.        |
+  |  Endless in every direction. It drifts slowly on its own;    |
+  |  grab it and the drift pauses, then resumes when you let go. |
+  +--------------------------------------------------------------+
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+
+<style>
+:root{
+  --bg:#0E0E11; --panel:#1a1a1f; --text:#ECEAE4; --dim:#7c7a73; --line:#26262b; --accent:#5A6CFF;
+  --grotesk:"Space Grotesk",system-ui,sans-serif;
+  --mono:"Space Mono",ui-monospace,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:var(--grotesk);overflow:hidden;
+  -webkit-font-smoothing:antialiased;cursor:none;
+}
+@media (hover:none){ body{cursor:auto;} }
+img,video{display:block;-webkit-user-drag:none;user-select:none;}
+::selection{background:var(--accent);color:#fff;}
+
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.06;mix-blend-mode:screen;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size:160px;}
+/* soft glow vignette to sink the edges into black */
+.glow{position:fixed;inset:0;z-index:1;pointer-events:none;
+  background:radial-gradient(130% 110% at 50% 45%,transparent 50%,rgba(0,0,0,.6) 100%);}
+
+/* stage / board */
+.stage{position:fixed;inset:0;z-index:2;overflow:hidden;touch-action:none;}
+.board{position:absolute;top:0;left:0;width:0;height:0;}
+.tile{position:absolute;top:0;left:0;will-change:transform;}
+.tile-inner{position:relative;width:100%;height:100%;overflow:hidden;cursor:none;
+  background:var(--panel);box-shadow:0 18px 44px -22px rgba(0,0,0,.9);
+  transition:transform .55s cubic-bezier(.16,1,.3,1), box-shadow .55s, filter .55s, opacity .7s ease;
+  transform:scale(1);opacity:0;}
+.tile-inner.in{opacity:1;}
+.tile:hover .tile-inner{transform:scale(1.05);box-shadow:0 30px 60px -26px rgba(0,0,0,1),0 0 0 1px rgba(90,108,255,.4);}
+.tile:hover{z-index:5;}
+.tile-inner .media{width:100%;height:100%;object-fit:cover;filter:saturate(1.02) contrast(1.03) brightness(.98);}
+.dim .tile-inner{filter:grayscale(1) brightness(.5) opacity(.28);pointer-events:none;}
+
+.tile-tag{position:absolute;left:10px;bottom:9px;z-index:3;
+  font-family:var(--mono);font-size:.6rem;letter-spacing:.12em;text-transform:uppercase;
+  color:#fff;opacity:0;transform:translateY(6px);transition:opacity .4s,transform .4s;
+  text-shadow:0 1px 6px rgba(0,0,0,.8);}
+.tile:hover .tile-tag{opacity:1;transform:none;}
+.vbadge{position:absolute;top:10px;right:10px;z-index:3;width:30px;height:30px;border-radius:50%;
+  background:rgba(0,0,0,.45);backdrop-filter:blur(3px);display:grid;place-items:center;border:1px solid rgba(236,234,228,.25);}
+.vbadge svg{width:11px;height:11px;fill:#fff;margin-left:1px;}
+
+.ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  background:repeating-linear-gradient(45deg,#191920 0 10px,#15151a 10px 20px);}
+
+/* fixed UI */
+.ui{position:fixed;inset:0;z-index:10;pointer-events:none;}
+.ui .bar{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:26px clamp(20px,4vw,44px);}
+.wordmark{font-family:var(--grotesk);font-weight:700;font-size:clamp(1.1rem,2.4vw,1.5rem);
+  letter-spacing:-.01em;line-height:1;}
+.wordmark span{display:block;font-family:var(--mono);font-weight:400;font-size:.6rem;
+  letter-spacing:.26em;color:var(--dim);margin-top:7px;text-transform:uppercase;}
+.filters{display:flex;gap:18px;pointer-events:auto;}
+.filters button{font-family:var(--mono);font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;
+  background:none;border:none;color:var(--dim);cursor:pointer;padding:2px 0;position:relative;}
+.filters button::after{content:"";position:absolute;left:0;right:0;bottom:-4px;height:1px;
+  background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .35s;}
+.filters button.active{color:var(--text);}
+.filters button.active::after{transform:scaleX(1);}
+.hint{position:absolute;left:50%;bottom:26px;transform:translateX(-50%);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+  display:flex;align-items:center;gap:10px;transition:opacity .6s;}
+.hint .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);animation:pulse 2.4s ease-in-out infinite;
+  box-shadow:0 0 8px 1px rgba(90,108,255,.7);}
+@keyframes pulse{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.3)}}
+.count{position:absolute;right:clamp(20px,4vw,44px);bottom:26px;
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;color:var(--dim);text-transform:uppercase;}
+
+/* custom cursor */
+.cursor{position:fixed;top:0;left:0;z-index:60;width:9px;height:9px;border-radius:50%;
+  background:var(--text);pointer-events:none;transform:translate(-50%,-50%);
+  transition:width .3s,height .3s,background .3s;display:grid;place-items:center;mix-blend-mode:difference;}
+.cursor.ring{width:74px;height:74px;background:transparent;border:1px solid var(--text);}
+.cursor.drag{width:54px;height:54px;background:rgba(236,234,228,.12);border:1px solid var(--text);}
+.cursor b{font-family:var(--mono);font-size:.54rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--text);opacity:0;transition:opacity .25s;}
+.cursor.ring b{opacity:1;}
+@media (hover:none){ .cursor{display:none;} }
+
+/* lightbox */
+.lb{position:fixed;inset:0;z-index:50;background:rgba(8,8,10,.95);backdrop-filter:blur(12px);
+  display:none;align-items:center;justify-content:center;padding:6vh 6vw;opacity:0;transition:opacity .4s;cursor:none;}
+.lb.open{display:flex;opacity:1;}
+.lb-inner{max-width:1100px;max-height:84vh;text-align:center;transform:scale(.96);transition:transform .45s cubic-bezier(.16,1,.3,1);}
+.lb.open .lb-inner{transform:scale(1);}
+.lb-inner img,.lb-inner video{max-width:100%;max-height:78vh;box-shadow:0 40px 100px -30px rgba(0,0,0,1);}
+.lb-cap{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-top:1.2rem;}
+.lb-x{position:fixed;top:22px;right:26px;width:44px;height:44px;border:1px solid var(--text);border-radius:50%;
+  background:none;color:var(--text);font-size:1.1rem;cursor:none;display:grid;place-items:center;
+  transition:transform .35s,background .3s,color .3s;}
+.lb-x:hover{transform:rotate(90deg);background:var(--text);color:var(--bg);}
+.lb-nav{position:fixed;top:50%;transform:translateY(-50%);background:none;border:none;cursor:none;
+  color:var(--text);font-size:2rem;opacity:.45;transition:opacity .3s;padding:22px;}
+.lb-nav:hover{opacity:1;}
+.lb-prev{left:1vw;}.lb-next{right:1vw;}
+.lb-idx{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;color:var(--dim);}
+
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+@media (prefers-reduced-motion:reduce){ .hint .dot{animation:none;} }
+</style>
+</head>
+<body>
+
+<div class="grain"></div>
+<div class="glow"></div>
+
+<div class="stage" id="stage"><div class="board" id="board"></div></div>
+
+<div class="ui">
+  <div class="bar">
+    <div class="wordmark" id="wordmark">GALLERY<span>drag to explore</span></div>
+    <div class="filters" id="filters">
+      <button data-f="all" class="active">All</button>
+      <button data-f="image">Photos</button>
+      <button data-f="video">Video</button>
+    </div>
+  </div>
+  <div class="hint" id="hint"><span class="dot"></span> <span id="hintText">Drag, scroll or swipe</span></div>
+  <div class="count" id="count"></div>
+</div>
+
+<div class="cursor" id="cursor"><b id="cursorLabel"></b></div>
+
+<div class="lb" id="lb">
+  <button class="lb-x" id="lbX" aria-label="Close">&#10005;</button>
+  <button class="lb-nav lb-prev" id="lbPrev" aria-label="Previous">&#8249;</button>
+  <div class="lb-inner" id="lbInner"></div>
+  <button class="lb-nav lb-next" id="lbNext" aria-label="Next">&#8250;</button>
+  <div class="lb-idx" id="lbIdx"></div>
+</div>
+
+<script>
+/* ===================================================================
+   YOUR GALLERY - edit this. Everything below builds itself.
+   =================================================================== */
+const GALLERY = {
+  title:"Abhishek & Krati",
+  tagline:"12 · 11 · 2025 · Jaipur",   // date, place - shown small under the name
+  hint:"Drag, scroll or swipe to wander",
+  // One entry per photo/video. Leave src:"" to show a placeholder tile.
+  media:[
+    {type:"image", src:"", size:"l"},  {type:"image", src:"", size:"s"},
+    {type:"video", src:"", size:"m"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"xl"}, {type:"image", src:"", size:"s"},
+    {type:"video", src:"", size:"l"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"s"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"l"},  {type:"video", src:"", size:"m"},
+    {type:"image", src:"", size:"s"},  {type:"image", src:"", size:"xl"},
+    {type:"image", src:"", size:"m"},  {type:"image", src:"", size:"s"},
+    {type:"image", src:"", size:"l"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"m"},  {type:"video", src:"", size:"s"},
+    {type:"image", src:"", size:"l"},  {type:"image", src:"", size:"s"},
+    {type:"image", src:"", size:"m"},  {type:"image", src:"", size:"xl"},
+    {type:"image", src:"", size:"m"},  {type:"video", src:"", size:"l"},
+    {type:"image", src:"", size:"s"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"l"},  {type:"image", src:"", size:"s"},
+    {type:"image", src:"", size:"m"},  {type:"image", src:"", size:"xl"},
+    {type:"image", src:"", size:"m"},  {type:"video", src:"", size:"s"},
+    {type:"image", src:"", size:"l"},  {type:"image", src:"", size:"m"},
+    {type:"image", src:"", size:"s"},  {type:"image", src:"", size:"l"},
+    {type:"image", src:"", size:"m"},  {type:"image", src:"", size:"xl"}
+  ]
+};
+
+/* ===================================================================
+   ENGINE  (vanilla JS - infinite wrap + idle auto-drift)
+   =================================================================== */
+(function(){
+  "use strict";
+  const $=(s,r=document)=>r.querySelector(s);
+  const $$=(s,r=document)=>Array.from(r.querySelectorAll(s));
+  const reduce=matchMedia("(prefers-reduced-motion:reduce)").matches;
+  const touch=matchMedia("(hover:none)").matches;
+  const rand=(a,b)=>a+Math.random()*(b-a);
+
+  const stage=$("#stage"), board=$("#board");
+  const playSVG=`<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>`;
+
+  $("#wordmark").firstChild.textContent=(GALLERY.title||"GALLERY");
+  $("#wordmark span").textContent=GALLERY.tagline||"drag to explore";
+  document.title=GALLERY.title||"Gallery";
+  if(GALLERY.hint) $("#hintText").textContent=GALLERY.hint;
+
+  const M=GALLERY.media;
+  const SIZES={ s:0.66, m:0.92, l:1.18, xl:1.45 };
+  const ASPECTS=[3/4, 1, 4/3, 16/10, 4/5, 5/4];
+  const vw=()=>window.innerWidth, vh=()=>window.innerHeight;
+  const base=()=> touch ? Math.min(vw(),vh())*0.40 : Math.min(vw(),vh())*0.22; // denser
+
+  /* ---- one repeating block of tiles ---- */
+  let block=[], BW=0, BH=0, cols=0, rows=0;
+  function buildBlock(){
+    const u=base();
+    const cellW=u*1.42, cellH=u*1.42;
+    const n=M.length, aspect=vw()/vh();
+    cols=Math.max(2, Math.round(Math.sqrt(n*aspect)));
+    rows=Math.ceil(n/cols);
+    const cellCount=cols*rows;
+    BW=cols*cellW; BH=rows*cellH;
+    block=[];
+    for(let c=0;c<cellCount;c++){
+      const mi=c%n, m=M[mi];
+      const col=c%cols, row=Math.floor(c/cols);
+      const mult=SIZES[m.size] || Object.values(SIZES)[Math.floor(rand(0,4))];
+      let w=Math.min(cellW*0.94, u*mult);
+      const asp=ASPECTS[(c*7)%ASPECTS.length];
+      let h=w/asp;
+      if(h>cellH*0.94){ h=cellH*0.94; w=h*asp; }
+      const x=col*cellW + rand(0, Math.max(0,cellW-w));
+      const y=row*cellH + rand(0, Math.max(0,cellH-h));
+      block.push({mi, x, y, w, h, type:m.type});
+    }
+  }
+
+  /* ---- field: enough block-copies to cover screen ---- */
+  let nodes=[], repX=1, repY=1, fieldW=0, fieldH=0;
+  function buildField(){
+    buildBlock();
+    repX=Math.ceil(vw()/BW)+1; repY=Math.ceil(vh()/BH)+1;
+    fieldW=repX*BW; fieldH=repY*BH;
+    board.innerHTML=""; nodes=[];
+    const frag=document.createDocumentFragment();
+    for(let ry=0;ry<repY;ry++) for(let rx=0;rx<repX;rx++){
+      for(const b of block){
+        const m=M[b.mi];
+        const tile=document.createElement("div");
+        tile.className="tile";
+        tile.style.width=b.w+"px"; tile.style.height=b.h+"px";
+        tile.dataset.media=b.mi; tile.dataset.type=b.type;
+        let inner;
+        if(m.src && m.type==="video"){
+          inner=`<video class="media" src="${m.src}" muted loop playsinline preload="metadata"></video><span class="vbadge">${playSVG}</span>`;
+        }else if(m.src){
+          inner=`<img class="media" src="${m.src}" alt="${m.tag||''}" loading="lazy">`;
+        }else{
+          inner=`<div class="ph">${b.type==="video"?"video":"photo"} ${String(b.mi+1).padStart(2,"0")}</div>`;
+        }
+        tile.innerHTML=`<div class="tile-inner">${inner}${m.tag?`<span class="tile-tag">${m.tag}</span>`:""}</div>`;
+        frag.appendChild(tile);
+        nodes.push({el:tile, inner:tile.querySelector(".tile-inner"),
+          baseX:b.x+rx*BW, baseY:b.y+ry*BH, w:b.w, h:b.h, type:b.type,
+          vid:tile.querySelector("video"), _x:0, _y:0});
+      }
+    }
+    board.appendChild(frag);
+    render(); entrance();
+  }
+
+  function entrance(){
+    if(reduce){ nodes.forEach(nd=>nd.inner.classList.add("in")); return; }
+    nodes.forEach((nd,i)=>{
+      nd.inner.style.transitionDelay=Math.min(i*6,650)+"ms";
+      requestAnimationFrame(()=>requestAnimationFrame(()=>nd.inner.classList.add("in")));
+    });
+    setTimeout(()=>nodes.forEach(nd=>nd.inner.style.transitionDelay=""),1500);
+  }
+
+  /* ---- physics: infinite + idle drift ---- */
+  let posX=0,posY=0, tX=0,tY=0, velX=0,velY=0;
+  let dragging=false, moved=0, lastX=0,lastY=0, lbOpen=false;
+  const friction=0.93;
+  const wrap=(v,size)=>((v%size)+size)%size;
+
+  // slow ambient drift (px/frame). pauses on interaction, resumes when idle.
+  const DRIFT_X = reduce?0:-0.16, DRIFT_Y = reduce?0:-0.09;
+  let idle=true, idleT=null;
+  function wake(){ idle=false; clearTimeout(idleT); idleT=setTimeout(()=>{ idle=true; }, 2600); }
+
+  function tick(){
+    if(!dragging){
+      tX+=velX; tY+=velY; velX*=friction; velY*=friction;
+      if(Math.abs(velX)<0.01)velX=0; if(Math.abs(velY)<0.01)velY=0;
+      if(idle && !lbOpen){ tX+=DRIFT_X; tY+=DRIFT_Y; }
+    }
+    const e=dragging?0.45:0.12;
+    posX+=(tX-posX)*e; posY+=(tY-posY)*e;
+    render();
+    requestAnimationFrame(tick);
+  }
+
+  let vt=0;
+  function render(){
+    if(!fieldW) return;
+    for(const nd of nodes){
+      const x=wrap(nd.baseX+posX+BW, fieldW)-BW;
+      const y=wrap(nd.baseY+posY+BH, fieldH)-BH;
+      nd._x=x; nd._y=y;
+      nd.el.style.transform=`translate3d(${x.toFixed(2)}px,${y.toFixed(2)}px,0)`;
+    }
+    if((vt++ %8)===0){
+      const W=vw(), H=vh();
+      for(const nd of nodes){ if(!nd.vid)continue;
+        const on = nd._x+nd.w>0 && nd._x<W && nd._y+nd.h>0 && nd._y<H;
+        if(on){ if(nd.vid.paused) nd.vid.play().catch(()=>{}); }
+        else if(!nd.vid.paused) nd.vid.pause();
+      }
+    }
+  }
+
+  /* ---- drag ---- */
+  stage.addEventListener("pointerdown",e=>{
+    dragging=true; moved=0; lastX=e.clientX; lastY=e.clientY; velX=velY=0; wake();
+    stage.setPointerCapture(e.pointerId); cursor.classList.add("drag");
+  });
+  stage.addEventListener("pointermove",e=>{
+    if(!dragging)return;
+    const dx=e.clientX-lastX, dy=e.clientY-lastY;
+    lastX=e.clientX; lastY=e.clientY;
+    moved+=Math.abs(dx)+Math.abs(dy);
+    tX+=dx; tY+=dy; velX=dx; velY=dy;
+  });
+  function endDrag(e){
+    if(!dragging)return; dragging=false; cursor.classList.remove("drag"); wake();
+    if(moved<6){ const t=e.target.closest(".tile"); if(t) openLB(+t.dataset.media); }
+  }
+  stage.addEventListener("pointerup",endDrag);
+  stage.addEventListener("pointercancel",()=>{dragging=false;cursor.classList.remove("drag");wake();});
+
+  /* ---- wheel / trackpad ---- */
+  stage.addEventListener("wheel",e=>{
+    e.preventDefault(); wake();
+    tX-=e.deltaX; tY-=e.deltaY;
+    velX=-e.deltaX*0.2; velY=-e.deltaY*0.2;
+  },{passive:false});
+
+  /* ---- custom cursor ---- */
+  const cursor=$("#cursor"), cursorLabel=$("#cursorLabel");
+  if(!touch){
+    window.addEventListener("pointermove",e=>{
+      cursor.style.left=e.clientX+"px"; cursor.style.top=e.clientY+"px";
+    },{passive:true});
+    document.addEventListener("pointerover",e=>{
+      if(dragging)return;
+      const onTile=e.target.closest(".tile");
+      cursor.classList.toggle("ring",!!onTile);
+      cursorLabel.textContent=onTile?"Open":"";
+    });
+  }
+
+  /* ---- hint ---- */
+  const hint=$("#hint"); let hidHint=false;
+  function hideHint(){ if(hidHint)return; hidHint=true; hint.style.opacity="0"; }
+  stage.addEventListener("pointerdown",hideHint,{once:true});
+  stage.addEventListener("wheel",hideHint,{once:true,passive:true});
+
+  /* ---- filters ---- */
+  $$("#filters button").forEach(b=>{
+    b.addEventListener("click",()=>{
+      $$("#filters button").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");
+      const f=b.dataset.f;
+      nodes.forEach(nd=>nd.el.classList.toggle("dim", f!=="all" && nd.type!==f));
+      updateCount(f);
+    });
+  });
+  function updateCount(f="all"){
+    const total=M.length;
+    const photos=M.filter(m=>m.type==="image").length, vids=total-photos;
+    const n=f==="image"?photos:f==="video"?vids:total;
+    $("#count").textContent=n+(f==="video"?" videos":f==="image"?" photos":" items");
+  }
+
+  /* ---- lightbox ---- */
+  const lb=$("#lb"), lbInner=$("#lbInner"); let cur=0;
+  function openLB(i){ cur=i; lbOpen=true; renderLB(); lb.classList.add("open"); }
+  function closeLB(){ lbOpen=false; lb.classList.remove("open"); lbInner.innerHTML=""; wake(); }
+  function renderLB(){
+    const m=M[cur];
+    if(!m||!m.src){
+      lbInner.innerHTML=`<div style="font-family:var(--mono);font-size:.8rem;letter-spacing:.15em;color:var(--dim);text-transform:uppercase;padding:60px">empty slot - add a ${m?m.type:"file"}</div>`;
+    }else{
+      lbInner.innerHTML=(m.type==="video"
+        ? `<video src="${m.src}" controls autoplay playsinline></video>`
+        : `<img src="${m.src}" alt="${m.tag||''}">`)
+        + (m.tag?`<div class="lb-cap">${m.tag}</div>`:"");
+    }
+    $("#lbIdx").textContent=String(cur+1).padStart(2,"0")+" / "+String(M.length).padStart(2,"0");
+  }
+  function stepLB(d){ cur=(cur+d+M.length)%M.length; renderLB(); }
+  $("#lbX").onclick=closeLB; $("#lbPrev").onclick=()=>stepLB(-1); $("#lbNext").onclick=()=>stepLB(1);
+  lb.addEventListener("click",e=>{ if(e.target===lb) closeLB(); });
+  window.addEventListener("keydown",e=>{
+    if(!lb.classList.contains("open"))return;
+    if(e.key==="Escape")closeLB(); if(e.key==="ArrowRight")stepLB(1); if(e.key==="ArrowLeft")stepLB(-1);
+  });
+
+  /* ---- resize ---- */
+  let rt;
+  window.addEventListener("resize",()=>{ clearTimeout(rt); rt=setTimeout(buildField,220); });
+
+  /* ---- go ---- */
+  buildField();
+  updateCount();
+  requestAnimationFrame(tick);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+@import 'tailwindcss';
+
+/* Tailwind v4.3 — CSS-first config. There is no tailwind.config.js by design. */
+@theme {
+  --font-grotesk: 'Space Grotesk', system-ui, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, monospace;
+
+  --color-ink: #0e0e11;
+  --color-panel: #16161b;
+  --color-panel-2: #1c1c22;
+  --color-line: #26262b;
+  --color-paper: #eceae4;
+  --color-dim: #7c7a73;
+  --color-accent: #5a6cff;
+  --color-good: #4ac57f;
+  --color-warn: #e0a83a;
+  --color-bad: #e2564a;
+}
+
+html,
+body {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  font-family: var(--font-grotesk);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Admin chrome primitives — kept tiny on purpose; the gallery is the design. */
+@layer components {
+  .label {
+    font-family: var(--font-mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--color-dim);
+  }
+
+  .field {
+    width: 100%;
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 6px;
+    padding: 0.6rem 0.75rem;
+    color: var(--color-paper);
+    font-size: 0.925rem;
+    outline: none;
+  }
+  .field:focus {
+    border-color: color-mix(in srgb, var(--color-accent) 70%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 18%, transparent);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 6px;
+    padding: 0.55rem 0.95rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--color-line);
+    background: var(--color-panel);
+    color: var(--color-paper);
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      border-color 0.15s,
+      opacity 0.15s;
+  }
+  .btn:hover:not(:disabled) {
+    background: var(--color-panel-2);
+  }
+  .btn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+  .btn-primary {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--color-accent) 85%, #fff);
+  }
+  .btn-danger {
+    color: var(--color-bad);
+    border-color: color-mix(in srgb, var(--color-bad) 45%, transparent);
+  }
+
+  .card {
+    background: var(--color-panel);
+    border: 1px solid var(--color-line);
+    border-radius: 10px;
+  }
+}

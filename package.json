@@ -1,0 +1,60 @@
+{
+  "name": "gallery-cms",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.18.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "migrate": "tsx scripts/migrate.ts",
+    "seed": "tsx scripts/seed.ts",
+    "reconcile": "tsx scripts/reconcile.ts",
+    "predev": "tsx scripts/build-engine-source.ts",
+    "prebuild": "tsx scripts/build-engine-source.ts",
+    "engine:source": "tsx scripts/build-engine-source.ts",
+    "smoke": "tsx scripts/build-engine-source.ts && tsx scripts/make-smoke-page.ts .smoke-empty.html && tsx scripts/make-smoke-page.ts .smoke-media.html media && node scripts/smoke-engine.mjs .smoke-empty.html && node scripts/smoke-engine.mjs .smoke-media.html"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "3.1101.0",
+    "@aws-sdk/s3-request-presigner": "3.1101.0",
+    "@ffmpeg/ffmpeg": "0.12.15",
+    "@ffmpeg/util": "0.12.2",
+    "@supabase/ssr": "0.12.4",
+    "@supabase/supabase-js": "2.111.0",
+    "bcryptjs": "3.0.3",
+    "heic-to": "1.5.2",
+    "jszip": "3.10.1",
+    "mp4-muxer": "5.2.2",
+    "next": "16.2.12",
+    "qrcode": "1.5.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "server-only": "^0.0.1",
+    "sharp": "0.35.3",
+    "zod": "4.4.3"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "1.1.0",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/fluent-ffmpeg": "2.1.27",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "24.10.1",
+    "@types/pg": "8.15.6",
+    "@types/qrcode": "1.5.5",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "dotenv": "17.2.3",
+    "fluent-ffmpeg": "2.1.3",
+    "jsdom": "^30.0.1",
+    "pg": "8.16.3",
+    "tailwindcss": "4.3.3",
+    "tsx": "4.23.4",
+    "typescript": "5.9.3"
+  }
+}

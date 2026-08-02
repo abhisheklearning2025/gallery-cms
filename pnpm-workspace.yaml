@@ -1,0 +1,8 @@
+allowBuilds:
+  '@ffmpeg-installer/darwin-arm64': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+minimumReleaseAgeExclude:
+  - tsx@4.23.4
