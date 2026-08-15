@@ -1,5 +1,13 @@
 allowBuilds:
+  # @ffmpeg-installer ships one binary package per platform and only the
+  # platform-matched one is installed. Every platform we build on has to be
+  # listed, or pnpm 11's strictDepBuilds default fails the install outright
+  # (ERR_PNPM_IGNORED_BUILDS) rather than warning. darwin-* is local dev,
+  # linux-x64 is Vercel and CI.
   '@ffmpeg-installer/darwin-arm64': true
+  '@ffmpeg-installer/darwin-x64': true
+  '@ffmpeg-installer/linux-x64': true
+  '@ffmpeg-installer/linux-arm64': true
   '@tailwindcss/oxide': true
   esbuild: true
   sharp: true
