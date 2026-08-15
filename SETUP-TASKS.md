@@ -75,7 +75,7 @@ Work through these in order. Paste the results into `.env.local` (I've created i
       "https://YOUR-APP.vercel.app"
     ],
     "AllowedMethods": ["GET", "PUT", "HEAD"],
-    "AllowedHeaders": ["content-type", "content-length", "x-amz-*"],
+    "AllowedHeaders": ["content-type", "content-length", "cache-control", "x-amz-*"],
     "ExposeHeaders": ["etag"],
     "MaxAgeSeconds": 3600
   }

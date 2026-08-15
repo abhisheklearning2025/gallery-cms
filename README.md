@@ -76,7 +76,7 @@ Then set the bucket's **CORS policy** — the browser PUTs compressed files stra
 [{
   "AllowedOrigins": ["http://localhost:3000", "https://YOUR-APP.vercel.app"],
   "AllowedMethods": ["GET", "PUT", "HEAD"],
-  "AllowedHeaders": ["content-type", "content-length", "x-amz-*"],
+  "AllowedHeaders": ["content-type", "content-length", "cache-control", "x-amz-*"],
   "ExposeHeaders": ["etag"],
   "MaxAgeSeconds": 3600
 }]
