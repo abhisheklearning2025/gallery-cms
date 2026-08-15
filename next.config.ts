@@ -30,6 +30,28 @@ const nextConfig: NextConfig = {
   // must never be bundled into the client or into edge runtimes.
   serverExternalPackages: ['sharp', 'fluent-ffmpeg', '@ffmpeg-installer/ffmpeg'],
 
+  // sharp's native addon reaches libvips through the OS dynamic linker (RPATH),
+  // not through a JS require -- @img/sharp-libvips-linux-x64 is only ever named
+  // as an optionalDependency of @img/sharp-linux-x64. The file tracer follows
+  // requires, so it packs sharp-linux-x64.node and drops the library that addon
+  // dlopens, and the function dies on first use with
+  //   ERR_DLOPEN_FAILED: libvips-cpp.so.8.18.3: cannot open shared object file
+  // Nothing about the install is wrong; the files just never reach the bundle.
+  // Only linux-x64 is listed because that is what Vercel runs -- the glob
+  // matches nothing on a dev machine, which is correct, since local dev resolves
+  // sharp straight out of node_modules.
+  //
+  // The glob is deliberately version-agnostic. Two libvips copies match (~32 MB
+  // total: next/image pulls sharp 0.34.5, we depend on 0.35.3), which is well
+  // inside Hobby's 250 MB and much safer than pinning a version that a lockfile
+  // bump would silently stop matching -- the failure mode there is this same
+  // runtime crash, with the config still looking correct.
+  outputFileTracingIncludes: {
+    '/api/media/process-fallback': [
+      'node_modules/.pnpm/**/@img/sharp-libvips-linux-x64/lib/**/*',
+    ],
+  },
+
   async headers() {
     return [
       {
