@@ -119,6 +119,28 @@ if (mediaCount === 0) {
   );
 }
 
+// Every tile must be shaped by its own photo, so object-fit:cover crops
+// nothing. Skipped on the empty-state page, where placeholders carry no
+// dimensions and the canned ASPECTS list is the correct source.
+const cfgMedia = (window.GALLERY && window.GALLERY.media) || [];
+if (cfgMedia.length) {
+  const wrong = [];
+  for (const t of root.querySelectorAll('.tile')) {
+    const m = cfgMedia[+t.dataset.media];
+    if (!m || !m.width || !m.height) continue;
+    const want = Math.min(2, Math.max(0.5, m.width / m.height));
+    const got = parseFloat(t.style.width) / parseFloat(t.style.height);
+    if (Math.abs(got - want) > 0.02) {
+      wrong.push(`#${t.dataset.media} want ${want.toFixed(2)} got ${got.toFixed(2)}`);
+    }
+  }
+  check(
+    'tiles match their photo aspect ratio',
+    wrong.length === 0,
+    wrong.length ? `${wrong.length} wrong: ${wrong.slice(0, 3).join(', ')}` : '',
+  );
+}
+
 // The drift loop must actually move the board.
 const before = tiles[0].style.transform;
 await new Promise((r) => setTimeout(r, 350));
