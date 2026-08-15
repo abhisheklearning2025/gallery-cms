@@ -104,8 +104,23 @@ export const POST = route(async (req) => {
 
       if (gallery.status === 'published') revalidateTag(galleryTag(gallery.slug), 'max');
     } catch (err) {
+      // Keep the row. It holds the only copy of why this failed, and the client
+      // polls for exactly that (`status === 'failed'` → `error`). Deleting it
+      // here turned every server-side failure into an unexplained 404, which is
+      // the one outcome the user can't act on. `failed` is excluded from the
+      // public gallery, the arrange grid shows the status, and Delete there
+      // removes it — so a kept row is recoverable in a way a lost error isn't.
+      //
+      // Renditions are only ever written after all of them encode, so a failure
+      // usually leaves nothing behind. A failure *between* puts orphans objects
+      // the row never recorded in storage_keys — the nightly reconciler diffs
+      // the bucket against the rows and collects those.
+      //
+      // after() runs outside route()'s try/catch, so nothing here reaches the
+      // '[api]' log on its own — hence the explicit one, with the stack the
+      // row's `error` column can't hold.
+      console.error('[api] process-fallback', created.id, err);
       await markFailed(created.id, err instanceof Error ? err.message : 'Processing failed.');
-      await db.from('media_items').delete().eq('id', created.id);
       await drainStorageDeletions();
     } finally {
       // The original never survives, success or failure (§2.7).
