@@ -38,7 +38,13 @@ export async function compressImage(
   }
 
   report(12, 'decoding');
-  const bitmap = await createImageBitmap(source).catch(() => null);
+  // 'from-image' is the spec default, but state it: the whole pipeline measures
+  // the decoded bitmap, so if EXIF rotation were skipped every portrait photo
+  // would be recorded with landscape dimensions and cropped to fit a landscape
+  // tile. That is exactly what the server path did before it was fixed.
+  const bitmap = await createImageBitmap(source, { imageOrientation: 'from-image' }).catch(
+    () => null,
+  );
   if (!bitmap) {
     throw new Error(`${file.name} couldn't be decoded. It may be corrupt or an unsupported format.`);
   }

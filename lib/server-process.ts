@@ -63,8 +63,17 @@ export async function processImageOnServer(
   const input = await download(sourceKey);
 
   const meta = await sharp(input).metadata();
-  const width = meta.width ?? 0;
-  const height = meta.height ?? 0;
+
+  // metadata() reports the dimensions as stored on the sensor, BEFORE the EXIF
+  // orientation flag is applied -- and the renditions below are built through
+  // .rotate(), which does apply it. For orientations 5-8 (the 90 degree ones,
+  // i.e. every portrait frame off a DSLR or phone) the rendered image is the
+  // transpose of what metadata reports, so recording meta.width/height verbatim
+  // stores a landscape shape for a portrait photo. The wall then builds a
+  // landscape tile around it and object-fit:cover throws most of the frame away.
+  const transposed = (meta.orientation ?? 1) >= 5;
+  const width = (transposed ? meta.height : meta.width) ?? 0;
+  const height = (transposed ? meta.width : meta.height) ?? 0;
   if (!width || !height) throw new Error('That file could not be decoded as an image.');
 
   const base = sharp(input, { failOn: 'none' })

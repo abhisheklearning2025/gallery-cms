@@ -16,6 +16,7 @@
     "seed": "tsx scripts/seed.ts",
     "reconcile": "tsx scripts/reconcile.ts",
     "rebase-urls": "tsx scripts/rebase-media-urls.ts",
+    "fix-dimensions": "tsx scripts/fix-media-dimensions.ts",
     "predev": "tsx scripts/build-engine-source.ts",
     "prebuild": "tsx scripts/build-engine-source.ts",
     "engine:source": "tsx scripts/build-engine-source.ts",
