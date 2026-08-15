@@ -99,8 +99,12 @@ if (mediaCount === 0) {
   const alts = [...imgs].filter((i) => i.getAttribute('alt'));
   check('alt text present on images', alts.length === imgs.length, `${alts.length}/${imgs.length}`);
 
-  const badges = root.querySelectorAll('.vbadge');
-  check('video badges rendered', badges.length > 0, `${badges.length}`);
+  // Only meaningful on a fixture that has video -- the landscape page is a
+  // photo-only shoot, like the gallery it was modelled on.
+  if ((window.GALLERY.media || []).some((m) => m.kind === 'video')) {
+    const badges = root.querySelectorAll('.vbadge');
+    check('video badges rendered', badges.length > 0, `${badges.length}`);
+  }
 
   // Single-play rule: at most one <video> element per media index should be
   // unpaused after the visibility pass.
@@ -139,6 +143,45 @@ if (cfgMedia.length) {
     wrong.length === 0,
     wrong.length ? `${wrong.length} wrong: ${wrong.slice(0, 3).join(', ')}` : '',
   );
+}
+
+// Cells must be shaped like the photos, or every tile leaves its leftover slack
+// on the same axis and the wall bands into empty stripes. A tile whose aspect
+// matches the block's median should sit with equal slack horizontally and
+// vertically.
+if (cfgMedia.length) {
+  const boardEl = root.querySelector('[data-board]');
+  const cellW = +boardEl.dataset.cellW;
+  const cellH = +boardEl.dataset.cellH;
+  const clamp = (x) => Math.min(2, Math.max(0.5, x));
+  const sorted = cfgMedia
+    .filter((m) => m.width && m.height)
+    .map((m) => clamp(m.width / m.height))
+    .sort((a, b) => a - b);
+  const mid = sorted.length >> 1;
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+
+  check(
+    'cell shape tracks the photos',
+    Math.abs(cellW / cellH - median) < 0.05,
+    `cell ${cellW}x${cellH} = ${(cellW / cellH).toFixed(2)}, median photo ${median.toFixed(2)}`,
+  );
+
+  // And the slack that remains is shared between the axes rather than pooling
+  // under every tile.
+  const median1 = cfgMedia.findIndex((m) => m.width && m.height && clamp(m.width / m.height) === median);
+  if (median1 >= 0) {
+    const t = [...root.querySelectorAll('.tile')].find((x) => +x.dataset.media === median1);
+    if (t) {
+      const fillX = parseFloat(t.style.width) / cellW;
+      const fillY = parseFloat(t.style.height) / cellH;
+      check(
+        'slack is balanced on both axes',
+        Math.abs(fillX - fillY) < 0.05,
+        `fills ${(fillX * 100).toFixed(0)}% wide, ${(fillY * 100).toFixed(0)}% tall`,
+      );
+    }
+  }
 }
 
 // The drift loop must actually move the board.

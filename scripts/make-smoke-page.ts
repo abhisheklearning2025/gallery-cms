@@ -3,9 +3,17 @@ import { ENGINE_JS, ENGINE_CSS } from '../lib/engine/generated-source';
 
 const OUT = process.argv[2];
 
-// Two pages: the empty-state placeholder wall, and one with real media
-// (picsum stand-ins) exercising images, videos, focal points and LQIP.
-const withMedia = process.argv[3] === 'media';
+// Three pages: the empty-state placeholder wall; a mixed-orientation set
+// exercising images, videos, focal points and LQIP; and a near-uniform
+// landscape set.
+//
+// The landscape page exists because the mixed set has a square median, so the
+// grid geometry checks pass against it no matter what the cell shape does. A
+// real gallery is not mixed -- a wedding shot on one camera is ~all 3:2 -- and
+// that is the case that went wrong: square cells under 3:2 photos left the
+// wall banded with empty stripes.
+const mode = process.argv[3];
+const withMedia = mode === 'media' || mode === 'landscape';
 
 // Mixed orientations on purpose. Tiles take their shape from the photo, so a
 // fixture of uniform 4:3 landscapes would pass no matter how that code behaved
@@ -20,10 +28,19 @@ const SHAPES: [number, number][] = [
   [2400, 1000], // 12:5 panorama, wider than the clamp
 ];
 
+// One DSLR, one shoot: 43 landscape frames and a single portrait. Taken from a
+// real 44-item gallery.
+const LANDSCAPE: [number, number][] = Array.from({ length: 44 }, (_, i) =>
+  i === 7 ? [3648, 5472] : [5472, 3648],
+);
+
+const shapesFor = (i: number): [number, number] =>
+  mode === 'landscape' ? LANDSCAPE[i] : SHAPES[i % SHAPES.length];
+
 const media = withMedia
-  ? Array.from({ length: 24 }, (_, i) => {
-      const [w, h] = SHAPES[i % SHAPES.length];
-      const isVideo = i % 6 === 0;
+  ? Array.from({ length: mode === 'landscape' ? 44 : 24 }, (_, i) => {
+      const [w, h] = shapesFor(i);
+      const isVideo = mode !== 'landscape' && i % 6 === 0;
       return {
         kind: isVideo ? 'video' : 'image',
         gridUrl: isVideo

@@ -19,7 +19,7 @@
     "predev": "tsx scripts/build-engine-source.ts",
     "prebuild": "tsx scripts/build-engine-source.ts",
     "engine:source": "tsx scripts/build-engine-source.ts",
-    "smoke": "tsx scripts/build-engine-source.ts && tsx scripts/make-smoke-page.ts .smoke-empty.html && tsx scripts/make-smoke-page.ts .smoke-media.html media && node scripts/smoke-engine.mjs .smoke-empty.html && node scripts/smoke-engine.mjs .smoke-media.html"
+    "smoke": "tsx scripts/build-engine-source.ts && tsx scripts/make-smoke-page.ts .smoke-empty.html && tsx scripts/make-smoke-page.ts .smoke-media.html media && tsx scripts/make-smoke-page.ts .smoke-landscape.html landscape && node scripts/smoke-engine.mjs .smoke-empty.html && node scripts/smoke-engine.mjs .smoke-media.html && node scripts/smoke-engine.mjs .smoke-landscape.html"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1101.0",

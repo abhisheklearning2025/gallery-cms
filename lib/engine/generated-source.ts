@@ -180,23 +180,66 @@ function mountGallery(root, GALLERY) {
   const MIN_ASPECT = 0.5; // 1:2, taller than 9:16
   const MAX_ASPECT = 2.0; // 2:1, wider than 16:9
 
+  /**
+   * How much of its cell a tile is allowed to take. Lower packs the wall
+   * tighter; the reference used 1.42, which reads as sparse now that tiles are
+   * sized by area rather than stretched to the cell width.
+   */
+  const CELL = 1.28;
+
   function tileAspect(m, c) {
     const natural = m.width > 0 && m.height > 0 ? m.width / m.height : 0;
     if (!natural) return ASPECTS[(c * 7) % ASPECTS.length];
     return Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, natural));
   }
 
+  /**
+   * The shape the grid should be built around: the median tile aspect, which
+   * ignores the one panorama in a set of portraits rather than being dragged by
+   * it the way a mean would. Falls back to square for the placeholder wall,
+   * which has no stored dimensions and is laid out by the ASPECTS list.
+   */
+  function blockAspect() {
+    const list = M.map((m) => (m.width > 0 && m.height > 0 ? m.width / m.height : 0))
+      .filter((x) => x > 0)
+      .map((x) => Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, x)))
+      .sort((x, y) => x - y);
+    if (!list.length) return 1;
+    const mid = list.length >> 1;
+    return list.length % 2 ? list[mid] : (list[mid - 1] + list[mid]) / 2;
+  }
+
   function buildBlock() {
     const u = base();
-    const cellW = u * 1.42;
-    const cellH = u * 1.42;
     const n = M.length;
+
+    // Cells take the shape of the photos they hold. Square cells holding 3:2
+    // landscapes leave the tile filling ~79% of the width but only ~53% of the
+    // height, and the random offset scatters that leftover into the horizontal
+    // bands of dead space that made the wall look half empty.
+    //
+    // cellW * cellH is unchanged by the sqrt pair, so density is identical --
+    // this only redistributes slack evenly instead of dumping all of it below
+    // every tile.
+    const a = blockAspect();
+    const cellW = u * CELL * Math.sqrt(a);
+    const cellH = (u * CELL) / Math.sqrt(a);
+
+    // Choose columns so a block is roughly viewport-shaped: BW/BH works out to
+    // cols^2 * a / n, so cols = sqrt(n * viewportAspect / a). At a = 1 this is
+    // the reference's sqrt(n * aspect), so the placeholder wall is untouched.
     const aspect = vw() / vh();
-    cols = Math.max(2, Math.round(Math.sqrt(n * aspect)));
+    cols = Math.max(2, Math.round(Math.sqrt((n * aspect) / a)));
     rows = Math.ceil(n / cols);
     const cellCount = cols * rows;
     BW = cols * cellW;
     BH = rows * cellH;
+
+    // Published so the layout invariant is checkable from outside: a tile whose
+    // aspect matches the block's should leave equal slack on both axes. Without
+    // this the only symptom of a mismatch is "it looks gappy".
+    board.dataset.cellW = String(Math.round(cellW));
+    board.dataset.cellH = String(Math.round(cellH));
     block = [];
     for (let c = 0; c < cellCount; c++) {
       const mi = c % n;
