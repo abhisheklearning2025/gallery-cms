@@ -4,7 +4,11 @@
  *
  *   pnpm migrate
  */
-import 'dotenv/config';
+// Next reads .env.local; plain `dotenv/config` only reads .env, so these
+// scripts have to point at .env.local explicitly or every var comes back unset.
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config();
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Client } from 'pg';

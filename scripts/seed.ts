@@ -12,7 +12,11 @@
  * empty gallery (§6.8), so you can see the wall working before uploading
  * anything.
  */
-import 'dotenv/config';
+// Next reads .env.local; plain `dotenv/config` only reads .env, so these
+// scripts have to point at .env.local explicitly or every var comes back unset.
+import { config } from 'dotenv';
+config({ path: '.env.local' });
+config();
 import { createClient } from '@supabase/supabase-js';
 
 async function main() {
