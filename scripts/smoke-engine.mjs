@@ -145,43 +145,57 @@ if (cfgMedia.length) {
   );
 }
 
-// Cells must be shaped like the photos, or every tile leaves its leftover slack
-// on the same axis and the wall bands into empty stripes. A tile whose aspect
-// matches the block's median should sit with equal slack horizontally and
-// vertically.
-if (cfgMedia.length) {
+// Scattered placement has to hold two properties at once, and they pull against
+// each other: nothing may overlap, and the wall must still be dense. Checking
+// only one is how you end up with either a pile or a void.
+{
   const boardEl = root.querySelector('[data-board]');
-  const cellW = +boardEl.dataset.cellW;
-  const cellH = +boardEl.dataset.cellH;
-  const clamp = (x) => Math.min(2, Math.max(0.5, x));
-  const sorted = cfgMedia
-    .filter((m) => m.width && m.height)
-    .map((m) => clamp(m.width / m.height))
-    .sort((a, b) => a - b);
-  const mid = sorted.length >> 1;
-  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  const BW = +boardEl.dataset.blockW;
+  const BH = +boardEl.dataset.blockH;
+  const count = +boardEl.dataset.blockCount;
 
-  check(
-    'cell shape tracks the photos',
-    Math.abs(cellW / cellH - median) < 0.05,
-    `cell ${cellW}x${cellH} = ${(cellW / cellH).toFixed(2)}, median photo ${median.toFixed(2)}`,
-  );
+  // Tiles are appended one whole block copy at a time, so the first `count` of
+  // them are exactly one block. Drift shifts every tile equally, so differences
+  // between them survive it.
+  const first = [...root.querySelectorAll('.tile')].slice(0, count).map((t) => {
+    const [x, y] = t.style.transform.match(/-?[\d.]+(?=px)/g).map(Number);
+    const w = parseFloat(t.style.width);
+    const h = parseFloat(t.style.height);
+    return { cx: x + w / 2, cy: y + h / 2, w, h };
+  });
 
-  // And the slack that remains is shared between the axes rather than pooling
-  // under every tile.
-  const median1 = cfgMedia.findIndex((m) => m.width && m.height && clamp(m.width / m.height) === median);
-  if (median1 >= 0) {
-    const t = [...root.querySelectorAll('.tile')].find((x) => +x.dataset.media === median1);
-    if (t) {
-      const fillX = parseFloat(t.style.width) / cellW;
-      const fillY = parseFloat(t.style.height) / cellH;
-      check(
-        'slack is balanced on both axes',
-        Math.abs(fillX - fillY) < 0.05,
-        `fills ${(fillX * 100).toFixed(0)}% wide, ${(fillY * 100).toFixed(0)}% tall`,
-      );
+  let overlaps = 0;
+  let worst = '';
+  for (let i = 0; i < first.length; i++) {
+    for (let j = i + 1; j < first.length; j++) {
+      const a = first[i];
+      const b = first[j];
+      let dx = Math.abs(a.cx - b.cx);
+      let dy = Math.abs(a.cy - b.cy);
+      if (dx > BW / 2) dx = BW - dx;
+      if (dy > BH / 2) dy = BH - dy;
+      // 1px of slack for the rounding in the transform string.
+      if (dx < (a.w + b.w) / 2 - 1 && dy < (a.h + b.h) / 2 - 1) {
+        overlaps++;
+        if (!worst) worst = `#${i} and #${j}`;
+      }
     }
   }
+  check(
+    'no two tiles overlap (on the torus)',
+    overlaps === 0,
+    overlaps ? `${overlaps} overlapping pair(s), first ${worst}` : `${first.length} tiles`,
+  );
+
+  // The packer measures 64-65% across all three fixtures and jams around 66%,
+  // so 0.55 leaves room for the randomness without letting a real regression
+  // through -- the grid layout this replaced sat at 63% *with* visible aisles.
+  const covered = first.reduce((s, t) => s + t.w * t.h, 0) / (BW * BH);
+  check(
+    'wall is densely packed',
+    covered > 0.55,
+    `${(covered * 100).toFixed(0)}% of the block covered`,
+  );
 }
 
 // The drift loop must actually move the board.
