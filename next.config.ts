@@ -46,9 +46,14 @@ const nextConfig: NextConfig = {
   // inside Hobby's 250 MB and much safer than pinning a version that a lockfile
   // bump would silently stop matching -- the failure mode there is this same
   // runtime crash, with the config still looking correct.
+  // The leading segment is matched with a single `*`, not `**`. pnpm fills
+  // .pnpm/<pkg>/node_modules/ with symlinks between packages, and those form
+  // cycles -- a `**` starting there can walk them forever. The only `**` left
+  // is inside libvips's own lib/, which is a handful of real files and the
+  // glib-2.0 headers.
   outputFileTracingIncludes: {
     '/api/media/process-fallback': [
-      'node_modules/.pnpm/**/@img/sharp-libvips-linux-x64/lib/**/*',
+      'node_modules/.pnpm/@img+sharp-libvips-linux-x64@*/node_modules/@img/sharp-libvips-linux-x64/lib/**/*',
     ],
   },
 
