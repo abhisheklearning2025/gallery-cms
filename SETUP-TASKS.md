@@ -63,7 +63,20 @@ Work through these in order. Paste the results into `.env.local` (I've created i
 |---|---|
 | `R2_PUBLIC_BASE_URL` | `https://pub-xxxxxxxx.r2.dev` |
 
-> ⚠️ **The r2.dev dev URL is rate-limited by Cloudflare and is explicitly not for production traffic.** It's fine for building and for showing the gallery to a few people. Before you send the link to a wedding-sized guest list, connect a custom domain (Bucket → Settings → Custom Domains → add e.g. `media.yourdomain.com`) and change `R2_PUBLIC_BASE_URL` to that. Custom domain on R2 is free and removes the rate limit. If you don't own a domain yet, that's the only thing this build needs that you don't have.
+> ⚠️ **The r2.dev dev URL is rate-limited by Cloudflare and is explicitly not for production traffic.** It's fine for building and for showing the gallery to a few people. Before you send the link to a wedding-sized guest list, move to a custom domain — see "Moving to a custom domain" below. Custom domain on R2 is free, removes the rate limit, and puts the images behind Cloudflare's CDN. If you don't own a domain yet, that's the only thing this build needs that you don't have.
+
+### Moving to a custom domain
+
+The domain has to be on Cloudflare already (its nameservers pointing at Cloudflare) — R2 can only attach a domain from a zone in the same account.
+
+1. Bucket → **Settings → Custom Domains → Connect Domain** → e.g. `media.yourdomain.com`. Cloudflare creates the DNS record and issues the certificate; it goes Active in a few minutes.
+2. Set `R2_PUBLIC_BASE_URL=https://media.yourdomain.com` in `.env.local` **and** in Vercel's environment variables.
+3. Run `pnpm rebase-urls` (dry run), then `pnpm rebase-urls --apply`.
+4. Redeploy.
+
+> Step 3 is not optional. Renditions are stored as **absolute** URLs at processing time — `media_items.grid_url` and friends, plus `galleries.og_image_url` — so changing the env var only affects media processed *after* the change. Everything already uploaded keeps pointing at the old host. And because `next.config.ts` derives `images.remotePatterns` from the same variable, the old host stops being an allowed image source the moment you change it, so every admin thumbnail for existing media breaks until the rows are rewritten. The script only swaps the origin; object keys are untouched and nothing is re-uploaded.
+>
+> Keep the old `pub-*.r2.dev` URL enabled for a while after the switch. Anyone holding a link that was rendered before the rebase — a shared page still in someone's browser cache, an OG image already scraped by WhatsApp — is still requesting the old host.
 
 7. **CORS** — the browser uploads compressed files directly to R2 via presigned PUT, so R2 must accept cross-origin PUTs. Bucket → **Settings → CORS policy → Add CORS policy**, paste:
 

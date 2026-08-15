@@ -15,6 +15,7 @@
     "migrate": "tsx scripts/migrate.ts",
     "seed": "tsx scripts/seed.ts",
     "reconcile": "tsx scripts/reconcile.ts",
+    "rebase-urls": "tsx scripts/rebase-media-urls.ts",
     "predev": "tsx scripts/build-engine-source.ts",
     "prebuild": "tsx scripts/build-engine-source.ts",
     "engine:source": "tsx scripts/build-engine-source.ts",
