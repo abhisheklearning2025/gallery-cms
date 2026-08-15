@@ -126,9 +126,18 @@ const after = tiles[0].style.transform;
 check('idle drift is moving tiles', before !== after, `${before} → ${after}`);
 
 // Lightbox opens and closes.
+//
+// pointerup is dispatched on the STAGE, not the tile, because that is what a
+// browser does: the stage calls setPointerCapture on pointerdown, and the
+// Pointer Events spec then retargets every later event for that pointer to the
+// capturing element. jsdom doesn't implement that retargeting, so firing
+// pointerup on the tile here would test jsdom rather than a browser -- and it
+// passed that way for a while against an engine whose lightbox could never
+// actually open.
 const lb = root.querySelector('[data-lb]');
+const stage = root.querySelector('.stage');
 tiles[0].dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
-tiles[0].dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
+stage.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, clientX: 10, clientY: 10, pointerId: 1 }));
 check('lightbox opens on tap', lb.classList.contains('open'));
 root.querySelector('[data-lb-x]').dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 check('lightbox closes', !lb.classList.contains('open'));

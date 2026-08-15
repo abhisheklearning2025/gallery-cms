@@ -328,6 +328,7 @@ function mountGallery(root, GALLERY) {
   let velY = 0;
   let dragging = false;
   let moved = 0;
+  let downTile = null;
   let lastX = 0;
   let lastY = 0;
   let lbOpen = false;
@@ -428,6 +429,9 @@ function mountGallery(root, GALLERY) {
     (e) => {
       dragging = true;
       moved = 0;
+      // Read the tile before setPointerCapture below makes the stage the target
+      // of every remaining event for this pointer -- see endDrag.
+      downTile = e.target.closest ? e.target.closest('.tile') : null;
       lastX = e.clientX;
       lastY = e.clientY;
       velX = velY = 0;
@@ -461,15 +465,27 @@ function mountGallery(root, GALLERY) {
     cursor.classList.remove('drag');
     wake();
     if (moved < 6) {
-      const t = e.target.closest('.tile');
-      if (t) openLB(+t.dataset.media);
+      // DIVERGES FROM THE REFERENCE (reference/index.html:350), which reads
+      // e.target.closest('.tile') off this pointerup and so can never open the
+      // lightbox in a real browser: pointerdown calls stage.setPointerCapture,
+      // and the Pointer Events spec retargets every later event for that
+      // pointer to the capturing element. e.target here is always the stage,
+      // and the stage is a tile's ancestor, so closest() always returns null.
+      //
+      // The press target is the reliable one -- capture is set inside the
+      // pointerdown handler, after that event was already dispatched to the
+      // tile. It's also the better semantic: the tile you pressed is the one
+      // that opens, even if idle drift slid a different tile under the cursor.
+      if (downTile) openLB(+downTile.dataset.media);
     }
+    downTile = null;
   }
   stage.addEventListener('pointerup', endDrag, sig);
   stage.addEventListener(
     'pointercancel',
     () => {
       dragging = false;
+      downTile = null;
       cursor.classList.remove('drag');
       wake();
     },
